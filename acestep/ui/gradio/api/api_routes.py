@@ -502,9 +502,6 @@ async def release_task(request: Request, authorization: Optional[str] = Header(N
             ),
             source_session_dir=get_param("source_session_dir", default=None),
             source_track_index=int(get_param("source_track_index", default=1) or 1),
-            source_latent_mix_ratio=float(
-                get_param("source_latent_mix_ratio", default=0.3) or 0.3,
-            ),
             repainting_regions=get_param("repainting_regions", default=None),
             save_session_artifacts=to_bool(
                 get_param("save_session_artifacts", default=False),

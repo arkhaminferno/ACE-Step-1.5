@@ -162,7 +162,6 @@ def build_repainting_controls() -> dict[str, Any]:
             )
         source_session_dir = gr.State(value="")
         source_track_index = gr.State(value=1)
-        source_latent_mix_ratio = gr.State(value=0.3)
         repaint_strength_memory = gr.State(value=0.5)
     return {
         "repainting_group": repainting_group,
@@ -173,6 +172,5 @@ def build_repainting_controls() -> dict[str, Any]:
         "repaint_strength": repaint_strength,
         "source_session_dir": source_session_dir,
         "source_track_index": source_track_index,
-        "source_latent_mix_ratio": source_latent_mix_ratio,
         "repaint_strength_memory": repaint_strength_memory,
     }

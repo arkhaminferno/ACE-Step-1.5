@@ -28,7 +28,6 @@ class ReleaseTaskModelsTests(unittest.TestCase):
         self.assertAlmostEqual(0.0, req.cover_noise_strength)
         self.assertIsNone(req.source_session_dir)
         self.assertEqual(1, req.source_track_index)
-        self.assertAlmostEqual(0.3, req.source_latent_mix_ratio)
 
     def test_audio_code_string_and_cover_noise_strength_are_accepted(self):
         """Model should accept user-supplied audio_code_string and cover_noise_strength."""

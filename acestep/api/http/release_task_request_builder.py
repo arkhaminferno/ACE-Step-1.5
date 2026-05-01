@@ -87,7 +87,6 @@ def build_generate_music_request(
         repaint_strength=parser.float("repaint_strength", 0.5),
         source_session_dir=parser.str("source_session_dir") or None,
         source_track_index=parser.int("source_track_index", 1),
-        source_latent_mix_ratio=parser.float("source_latent_mix_ratio", 0.3),
         repainting_regions=_get_raw("repainting_regions"),
         save_session_artifacts=parser.bool("save_session_artifacts"),
         session_output_dir=parser.str("session_output_dir") or None,

@@ -169,7 +169,6 @@ def _build_capture_current_params_inputs(generation_section: dict[str, Any]) -> 
         generation_section["repaint_strength"],
         generation_section["source_session_dir"],
         generation_section["source_track_index"],
-        generation_section["source_latent_mix_ratio"],
         generation_section["retake_variance"],
         generation_section["retake_seed"],
     ]

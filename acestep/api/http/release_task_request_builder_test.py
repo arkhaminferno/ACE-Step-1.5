@@ -141,7 +141,6 @@ class ReleaseTaskRequestBuilderTests(unittest.TestCase):
                 "repaint_mode": "balanced",
                 "source_session_dir": "/tmp/source-session",
                 "source_track_index": 2,
-                "source_latent_mix_ratio": 0.25,
                 "save_session_artifacts": True,
                 "session_output_dir": "/tmp/out-session",
             }
@@ -159,7 +158,6 @@ class ReleaseTaskRequestBuilderTests(unittest.TestCase):
         self.assertEqual("balanced", request.repaint_mode)
         self.assertEqual("/tmp/source-session", request.source_session_dir)
         self.assertEqual(2, request.source_track_index)
-        self.assertAlmostEqual(0.25, request.source_latent_mix_ratio)
         self.assertTrue(request.save_session_artifacts)
         self.assertEqual("/tmp/out-session", request.session_output_dir)
 

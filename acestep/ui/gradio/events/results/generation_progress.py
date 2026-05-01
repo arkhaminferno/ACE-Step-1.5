@@ -74,7 +74,6 @@ def generate_with_progress(
     repaint_strength,
     source_session_dir="",
     source_track_index=1,
-    source_latent_mix_ratio=0.3,
     retake_variance=0.0,
     retake_seed="",
     flow_edit_morph=False,
@@ -198,9 +197,6 @@ def generate_with_progress(
         repaint_strength=float(repaint_strength) if repaint_strength is not None else 0.5,
         source_session_dir=source_session_dir or None,
         source_track_index=int(source_track_index) if source_track_index else 1,
-        source_latent_mix_ratio=(
-            float(source_latent_mix_ratio) if source_latent_mix_ratio is not None else 0.3
-        ),
         retake_variance=float(retake_variance) if retake_variance is not None else 0.0,
         # Empty textbox -> None; otherwise a string is fine (handler.prepare_seeds parses it).
         retake_seed=(retake_seed.strip() or None) if isinstance(retake_seed, str) else retake_seed,

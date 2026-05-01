@@ -228,7 +228,6 @@ class GenerateMusicMixin:
         repaint_strength: float = 0.5,
         source_session_dir: Optional[str] = None,
         source_track_index: int = 1,
-        source_latent_mix_ratio: float = 0.3,
         repainting_regions: Optional[List[Dict[str, float]]] = None,
         source_repaint_latents: Optional[torch.Tensor] = None,
         retake_seed: Optional[Union[str, float, int]] = None,
@@ -269,7 +268,6 @@ class GenerateMusicMixin:
             source_session_dir: Optional source session directory for
                 generated-source repaint.
             source_track_index: One-based source track index for logging.
-            source_latent_mix_ratio: Deprecated compatibility argument.
             repainting_regions: Optional multi-region edit list.
             source_repaint_latents: Loaded source final latents for repaint.
             progress: Optional callback taking ``(ratio, desc=...)``.

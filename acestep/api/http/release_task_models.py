@@ -98,12 +98,6 @@ class GenerateMusicRequest(BaseModel):
         ge=1,
         description="One-based source track index inside source_session_dir.",
     )
-    source_latent_mix_ratio: float = Field(
-        default=0.3,
-        ge=0.0,
-        lt=1.0,
-        description="Deprecated compatibility field; ignored by session-backed repaint.",
-    )
     repainting_regions: Optional[List[dict]] = Field(
         default=None,
         description="Optional multiple repaint regions, each with start/end seconds.",

@@ -188,7 +188,6 @@ def build_generation_setup(
         repaint_strength=getattr(req, "repaint_strength", 0.5),
         source_session_dir=getattr(req, "source_session_dir", None),
         source_track_index=getattr(req, "source_track_index", 1),
-        source_latent_mix_ratio=getattr(req, "source_latent_mix_ratio", 0.3),
         repainting_regions=getattr(req, "repainting_regions", None),
         save_session_artifacts=getattr(req, "save_session_artifacts", False),
         session_output_dir=getattr(req, "session_output_dir", None),

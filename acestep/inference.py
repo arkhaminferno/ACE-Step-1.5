@@ -170,7 +170,6 @@ class GenerationParams:
     repaint_strength: float = 0.5  # 0.0=aggressive, 1.0=conservative (balanced mode only)
     source_session_dir: Optional[str] = None
     source_track_index: int = 1
-    source_latent_mix_ratio: float = 0.3  # Deprecated compatibility field.
     repainting_regions: Optional[List[Dict[str, float]]] = None
     save_session_artifacts: bool = False
     session_output_dir: Optional[str] = None
@@ -733,7 +732,6 @@ def generate_music(
             "repaint_strength": params.repaint_strength,
             "source_session_dir": params.source_session_dir,
             "source_track_index": params.source_track_index,
-            "source_latent_mix_ratio": params.source_latent_mix_ratio,
             "repainting_regions": params.repainting_regions,
             "source_repaint_latents": source_repaint_latents,
             "retake_seed": params.retake_seed,
