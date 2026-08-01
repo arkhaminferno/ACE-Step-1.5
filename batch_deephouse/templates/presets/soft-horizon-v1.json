@@ -1,0 +1,13 @@
+{
+  "title": "Soft Horizon",
+  "slug": "soft-horizon-deep-house",
+  "genre": "chill deep house",
+  "inspired_by_note": "LIYNA - Mirage vibe (smooth groove, deep bass, airy synths) — original writing only",
+  "duration_sec": 120,
+  "bpm": 120,
+  "key_scale": "A minor",
+  "seed": 42001,
+  "vocal": false,
+  "stage": "pilot_2min",
+  "next_step_if_approved": "extend toward 10–60 min long-form via continuation / longer duration"
+}

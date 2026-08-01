@@ -128,6 +128,14 @@ class MlxVaeInitMixinTests(unittest.TestCase):
         self.assertIsNone(host.mlx_vae)
         self.assertFalse(host.use_mlx_vae)
 
+    def test_init_mlx_vae_disabled_by_env(self):
+        """It skips MLX VAE when ACESTEP_DISABLE_MLX_VAE is set."""
+        host = _VaeHost()
+        with patch.dict(os.environ, {"ACESTEP_DISABLE_MLX_VAE": "1"}, clear=False):
+            self.assertFalse(host._init_mlx_vae())
+        self.assertIsNone(host.mlx_vae)
+        self.assertFalse(host.use_mlx_vae)
+
     def test_init_mlx_vae_success_sets_compiled_callables(self):
         """It initializes MLX VAE and stores compiled decode/encode callables."""
         host = _VaeHost()
@@ -153,7 +161,11 @@ class MlxVaeInitMixinTests(unittest.TestCase):
                 "acestep.models.mlx.vae_convert": fake_vae_convert,
             },
         ):
-            with patch.dict(os.environ, {"ACESTEP_MLX_VAE_FP16": "0"}, clear=False):
+            with patch.dict(
+                os.environ,
+                {"ACESTEP_MLX_VAE_FP16": "0", "ACESTEP_DISABLE_MLX_VAE": "0"},
+                clear=False,
+            ):
                 self.assertTrue(host._init_mlx_vae())
         self.assertEqual(calls["compile"], 2)
         self.assertTrue(host.use_mlx_vae)

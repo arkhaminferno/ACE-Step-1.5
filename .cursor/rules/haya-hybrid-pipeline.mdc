@@ -1,0 +1,39 @@
+---
+description: HAYA follows FerdausMix YouTube-only mix channel model
+alwaysApply: true
+---
+
+# HAYA FerdausMix YouTube Pipeline (Required)
+
+Reference channel: https://www.youtube.com/@FerdausMix  
+Research docs: `research/ferdaus_mix/ANALYSIS.md`, `research/ferdaus_mix/PIPELINE.md`
+
+## Distribution (locked)
+
+- **YouTube only** — no RouteNote / Spotify for now (same model as FerdausMix).
+- Public release = **~30–36 min DJ mix** of **9–10 tracks**.
+- Individual ~2 min masters are building blocks; one master per song folder.
+
+## Generation (locked)
+
+1. **ACE-Step** pure `text2music` with `batch_deephouse/natural_vocal_recipe.py` only
+2. Thinking LM on (`acestep-5Hz-lm-1.7B`), **120s**, short sticky Arabic hook, ~108 BPM
+3. Generate **2 seeds**, keep the amazing take, delete the other
+4. **Do not** use: DiffRhythm hybrid, Suno, YuE, or FerdausMix extended-club / drop-map prompts  
+   (Mulki 122 BPM experiment rejected — ditch that approach)
+
+Approved masters: Hawa, Rouh, Ward, Shouf, Baid (+ Noor, Yalil).
+
+## Post-production for YouTube mix
+
+1. Collect 9–10 approved masters  
+2. Hard-cut concat with `research/ferdaus_mix/scripts/compile_mix.py`  
+3. Package under `batch_deephouse/output/<mix_slug>/`
+
+## Title template
+
+`Dark Mood — {ArabicTitle} | Arabic Deep Chill House Mix 2026 • Vocal House / Night Vibes`
+
+## Style
+
+Arabic deep chill house, dark emotional night drive, female Arabic vocal, warm sub bass, four-on-the-floor, ~108 BPM.

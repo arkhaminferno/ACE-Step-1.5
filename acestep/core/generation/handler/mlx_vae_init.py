@@ -30,6 +30,17 @@ class MlxVaeInitMixin:
             initialization step raises an exception. Failures are logged as
             non-fatal.
         """
+        # Escape hatch for low-memory Macs: MLX VAE decode of ~90–120s latents
+        # can jetsam the API process; PyTorch tiled MPS/CPU decode is safer.
+        if os.environ.get("ACESTEP_DISABLE_MLX_VAE", "").lower() in ("1", "true", "yes"):
+            logger.info("[MLX-VAE] Disabled via ACESTEP_DISABLE_MLX_VAE.")
+            self.mlx_vae = None
+            self.use_mlx_vae = False
+            self._mlx_compiled_decode = None
+            self._mlx_compiled_encode_sample = None
+            self._mlx_vae_dtype = None
+            return False
+
         try:
             from acestep.models.mlx import mlx_available
 

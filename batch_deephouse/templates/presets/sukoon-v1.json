@@ -1,0 +1,18 @@
+{
+  "title": "Sukoon سكون",
+  "slug": "sukoon-arabic-deep-chill",
+  "genre": "arabic oriental deep chill house",
+  "inspired_by_note": "Ferdaus Mix Dark Mood / Arabic Deep Chill — original writing only",
+  "reference_channels": [
+    "https://www.youtube.com/@FerdausMix",
+    "https://www.youtube.com/watch?v=TdYo9tOOTic"
+  ],
+  "duration_sec": 120,
+  "bpm": 108,
+  "key_scale": "D minor",
+  "seed": 43011,
+  "vocal": true,
+  "vocal_language": "ar",
+  "signature_instrument": "oud / oriental lute motif",
+  "stage": "pilot_2min"
+}

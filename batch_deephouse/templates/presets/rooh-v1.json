@@ -1,0 +1,16 @@
+{
+  "title": "Rooh روح",
+  "slug": "rooh-arabic-dark-chill",
+  "genre": "arabic dark chill house",
+  "duration_sec": 120,
+  "bpm": 115,
+  "key_scale": "D minor",
+  "seed": 46044,
+  "vocal": true,
+  "vocal_gender": "female",
+  "vocal_language": "ar",
+  "cold_open": true,
+  "hook_phrase": "يا ليل خذني",
+  "signature_instrument": "oud",
+  "stage": "pilot_2min"
+}

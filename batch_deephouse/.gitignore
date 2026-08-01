@@ -1,0 +1,15 @@
+# Heavy / generated artifacts — keep code + template assets in git
+output/
+ae_work/
+__pycache__/
+*.pyc
+*_35min.mp3
+*_35min_*.mp3
+*-youtube.mp4
+.DS_Store
+ae_template/assets/_original_chatgpt/
+ae_template/assets/*.mp4
+*.mp3
+*.wav
+*.flac
+*.log

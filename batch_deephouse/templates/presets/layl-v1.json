@@ -1,0 +1,14 @@
+{
+  "title": "Layl ليل",
+  "slug": "layl-arabic-dark-chill",
+  "genre": "arabic dark chill house",
+  "inspired_by_note": "Ferdaus Mix Dark Mood night-drive — original writing only",
+  "duration_sec": 120,
+  "bpm": 92,
+  "key_scale": "C minor",
+  "seed": 45033,
+  "vocal": true,
+  "vocal_language": "ar",
+  "signature_instrument": "oud",
+  "stage": "pilot_2min"
+}

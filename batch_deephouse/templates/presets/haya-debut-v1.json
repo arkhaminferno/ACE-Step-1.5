@@ -1,0 +1,15 @@
+{
+  "brand": "HAYA",
+  "handle": "@hayamusic",
+  "title": "Haya Debut",
+  "slug": "haya-debut-dark-chill",
+  "duration_sec": 120,
+  "bpm": 108,
+  "key_scale": "D minor",
+  "seed": 51001,
+  "vocal": true,
+  "vocal_gender": "female",
+  "vocal_language": "ar",
+  "deliver_mode": "stealth",
+  "stage": "pilot_2min_channel_debut"
+}
