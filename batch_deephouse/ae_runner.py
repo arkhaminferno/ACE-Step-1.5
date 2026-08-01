@@ -84,21 +84,27 @@ def run_aerender(job: RenderJob, *, timeout_sec: int = 14400) -> Path:
         str(job.output_mp4.resolve()),
     ]
     print("Starting aerender (headless; 35-min mixes can take a while)...")
+    # AE logs can include non-UTF8 bytes (Mac locale / progress lines) — never crash
+    # after a successful export because stdout decode failed.
     result = subprocess.run(
         cmd,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         timeout=timeout_sec,
         check=False,
     )
-    if result.stdout.strip():
-        print(result.stdout.strip()[-4000:])
-    if result.stderr.strip():
-        print(result.stderr.strip()[-2000:])
+    stdout = (result.stdout or "").strip()
+    stderr = (result.stderr or "").strip()
+    if stdout:
+        print(stdout[-4000:])
+    if stderr:
+        print(stderr[-2000:])
     if job.output_mp4.is_file() and job.output_mp4.stat().st_size > 1_000_000:
         return job.output_mp4
     if result.returncode != 0:
-        detail = (result.stderr or result.stdout or "unknown aerender error").strip()
+        detail = (stderr or stdout or "unknown aerender error").strip()
         raise RuntimeError(f"aerender failed for {job.slug}: {detail}")
     if not job.output_mp4.is_file():
         raise RuntimeError(f"aerender finished but MP4 missing: {job.output_mp4}")

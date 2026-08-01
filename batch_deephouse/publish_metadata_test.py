@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from batch_deephouse.ae_titles import LOCKED_YOUTUBE_SLUGS
 from batch_deephouse.publish_metadata import (
     build_song,
     build_tags,
@@ -17,23 +18,45 @@ from batch_deephouse.publish_metadata import (
 
 
 class TestHayaPublishFields(unittest.TestCase):
-    """Titles/tags match Yalil/Noor Dark Mood style."""
+    """Titles/tags front-load searchable deep-house terms."""
 
-    def test_title_uses_english_then_arabic_template(self) -> None:
-        """Title is Name + Arabic + fixed night-drive suffix."""
-        title = build_title(name="Hawa", native="هوا")
+    def test_title_front_loads_genre_keywords(self) -> None:
+        """Title leads with Arabic Deep House Mix, then song + mood."""
+        title = build_title(name="Hanan", native="حنان")
         self.assertEqual(
             title,
-            "Hawa هوا — Arabic Deep House Night Drive Mix 2026 | Dark Chill Vocal House",
+            "Arabic Deep House Mix 2026 | Hanan حنان — "
+            "Dark Mood Night Drive Chill",
         )
         self.assertLessEqual(len(title), 100)
+        self.assertTrue(title.startswith("Arabic Deep House Mix"))
 
-    def test_tags_near_500_chars(self) -> None:
-        """Comma-joined tags stay within ~500 Studio soft limit."""
-        tags = build_tags(slug="hawa", name="Hawa", native="هوا", hook="هوا هوا")
+    def test_tags_prioritize_high_volume_seo(self) -> None:
+        """Tags start with broad searchable terms and stay ≤500 chars."""
+        tags = build_tags(slug="hanan", name="Hanan", native="حنان", hook="يا حنان")
         joined = ", ".join(tags)
+        self.assertEqual(tags[0], "deep house")
+        self.assertIn("arabic deep house", tags)
+        self.assertIn("night drive music", tags)
+        self.assertIn("دييب هاوس", tags)
+        self.assertIn("موسيقى عربية", tags)
         self.assertGreater(len(joined), 250)
         self.assertLessEqual(len(joined), 500)
+
+    def test_description_opens_with_search_snippet(self) -> None:
+        """First description line carries primary SEO phrase."""
+        song = build_song(
+            {
+                "slug": "hanan",
+                "name": "Hanan",
+                "native": "حنان",
+                "hook": "يا حنان",
+                "published": False,
+            }
+        )
+        first_line = song["description"].splitlines()[0]
+        self.assertIn("Arabic Deep House Mix 2026", first_line)
+        self.assertIn("35-minute", song["description"])
 
     def test_build_song_marks_published(self) -> None:
         """Catalog published flag flows into the song object."""
@@ -48,13 +71,14 @@ class TestHayaPublishFields(unittest.TestCase):
         )
         self.assertTrue(song["published"])
         self.assertEqual(song["youtubeFilename"], "noor-youtube.mp4")
+        self.assertEqual(song["audioFilename"], "noor_35min.mp3")
 
 
 class TestExportMetadata(unittest.TestCase):
-    """Export writes brand payload with all catalog songs."""
+    """Export writes brand payload with locked catalog songs."""
 
-    def test_exports_all_songs(self) -> None:
-        """metadata.json includes pending + uploaded HAYA songs."""
+    def test_exports_locked_songs(self) -> None:
+        """metadata.json includes locked batch + prior uploads."""
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             meta = root / "metadata.json"
@@ -63,11 +87,19 @@ class TestExportMetadata(unittest.TestCase):
                 export_metadata(path=meta)
             data = json.loads(meta.read_text(encoding="utf-8"))
             self.assertEqual(data["brand"], "HAYA")
-            for slug in ("yalil", "noor", "hawa", "rouh", "ward", "shouf", "baid"):
+            for slug in LOCKED_YOUTUBE_SLUGS:
                 self.assertIn(slug, data["songs"])
+                self.assertFalse(data["songs"][slug]["published"])
             self.assertTrue(data["songs"]["yalil"]["published"])
-            self.assertFalse(data["songs"]["baid"]["published"])
-            self.assertTrue((out_dir / "baid" / "baid.youtube.json").is_file())
+            self.assertTrue(data["songs"]["noor"]["published"])
+            self.assertTrue((out_dir / "safa" / "safa.youtube.json").is_file())
+            self.assertTrue(
+                data["songs"]["safa"]["title"].startswith("Arabic Deep House Mix")
+            )
+            self.assertEqual(
+                data["slugAliases"]["safa-youtube"],
+                "safa",
+            )
 
 
 if __name__ == "__main__":

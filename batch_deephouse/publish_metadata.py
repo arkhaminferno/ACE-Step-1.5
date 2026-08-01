@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from batch_deephouse.ae_titles import ARABIC_TITLES, LOCKED_YOUTUBE_SLUGS
 from batch_deephouse.paths import BATCH_ROOT, OUTPUT_DIR
 
 METADATA_DIR = BATCH_ROOT / "metadata"
@@ -17,122 +18,160 @@ BRAND_HANDLE = "@hayamusic"
 BRAND_TAGLINE = "Arabic Deep House · Night Drive · Dark Chill"
 PLAYLIST = "HAYA — Arabic Deep Chill House | Night Drive Mixes 2026"
 
-# Catalog: published=True for songs already on YouTube.
+# Vocal hooks for description / tags (Recipe2 + approved masters).
+HOOKS_BY_SLUG: dict[str, str] = {
+    "hanan": "يا حنان",
+    "lama": "يا لمى",
+    "layl": "يا ليل",
+    "luma": "يا لوما",
+    "mira": "ميرا ميرا",
+    "noura": "يا نورة",
+    "qamar": "يا قمر",
+    "rana": "يا رنا",
+    "rima": "يا ريما",
+    "safa": "يا صفاء",
+    "yalil": "يا ليل يا ليلي",
+    "noor": "نور نور",
+}
+
+# Display names (English) for titles/descriptions.
+NAMES_BY_SLUG: dict[str, str] = {
+    "hanan": "Hanan",
+    "lama": "Lama",
+    "layl": "Layl",
+    "luma": "Luma",
+    "mira": "Mira",
+    "noura": "Noura",
+    "qamar": "Qamar",
+    "rana": "Rana",
+    "rima": "Rima",
+    "safa": "Safa",
+    "yalil": "Yalil",
+    "noor": "Noor",
+}
+
+
+def _catalog_entry(slug: str, *, published: bool) -> dict[str, Any]:
+    """One SONG_CATALOG row from locked title/hook maps."""
+    return {
+        "slug": slug,
+        "name": NAMES_BY_SLUG[slug],
+        "native": ARABIC_TITLES[slug],
+        "hook": HOOKS_BY_SLUG[slug],
+        "published": published,
+    }
+
+
+# Locked Aug 2026 YouTube batch + prior uploads (yalil/noor).
 SONG_CATALOG: list[dict[str, Any]] = [
-    {
-        "slug": "yalil",
-        "name": "Yalil",
-        "native": "يا ليل",
-        "hook": "يا ليل يا ليلي",
-        "published": True,
-    },
-    {
-        "slug": "noor",
-        "name": "Noor",
-        "native": "نور",
-        "hook": "نور نور",
-        "published": True,
-    },
-    {
-        "slug": "hawa",
-        "name": "Hawa",
-        "native": "هوا",
-        "hook": "هوا هوا",
-        "published": False,
-    },
-    {
-        "slug": "rouh",
-        "name": "Rouh",
-        "native": "روح",
-        "hook": "روح روح",
-        "published": False,
-    },
-    {
-        "slug": "ward",
-        "name": "Ward",
-        "native": "ورد",
-        "hook": "ورد ورد",
-        "published": False,
-    },
-    {
-        "slug": "shouf",
-        "name": "Shouf",
-        "native": "شوف",
-        "hook": "شوف شوف",
-        "published": False,
-    },
-    {
-        "slug": "baid",
-        "name": "Baid",
-        "native": "بعيد",
-        "hook": "بعيد بعيد",
-        "published": False,
-    },
+    *[_catalog_entry(slug, published=False) for slug in LOCKED_YOUTUBE_SLUGS],
+    _catalog_entry("yalil", published=True),
+    _catalog_entry("noor", published=True),
 ]
 
 
 def build_title(*, name: str, native: str) -> str:
-    """English name + Arabic + fixed night-drive suffix (≤100 chars)."""
+    """SEO title: high-volume genre terms first, then song + mood (≤100 chars).
+
+    Unique Arabic names alone rarely get searched; front-load
+    \"Arabic Deep House Mix\" / night-drive terms people actually type.
+    """
     return (
-        f"{name} {native} — Arabic Deep House Night Drive Mix 2026 "
-        "| Dark Chill Vocal House"
+        f"Arabic Deep House Mix 2026 | {name} {native} — "
+        f"Dark Mood Night Drive Chill"
     )
 
 
 def build_description(*, name: str, native: str, hook: str) -> str:
-    """Yalil/Noor-style description with hashtags."""
-    return f"""🌙 {name} | {native} — Arabic Deep Chill House Night Drive
+    """Keyword-rich description; first ~150 chars are the search snippet."""
+    native_tag = native.replace(" ", "_")
+    return f"""Arabic Deep House Mix 2026 — {name} ({native}) | Dark Mood Night Drive Chill House
 
-Late-night Arabic deep house for dark drives, headphones, and quiet focus.
-Warm sub bass · four-on-the-floor · female Arabic vocal · oriental melody.
+35-minute Arabic deep chill house for night drives, late study, cafe focus, and headphones.
+Warm sub bass · soft four-on-the-floor · female Arabic vocal · oriental melody · melodic deep house vibe.
 
-{hook}
+Hook: {hook}
 
-🎧 Best with: car speakers / good headphones / lights low
+Best for:
+• Night drive / car music / highway chill
+• Deep house mix / chill house / lounge house
+• Study music, focus playlist, quiet late-night sessions
+• Oriental deep house & Middle Eastern vocal house
+
+Timestamps:
+0:00 — Cold open / vocal hook
+~3:00 — Full groove locked
+~35:00 — Soft fade out
 
 Channel: HAYA ({BRAND_HANDLE})
 Playlist: {PLAYLIST}
 New Arabic deep house mixes every week — subscribe 🔔
 
-#ArabicDeepHouse #DeepHouse #NightDrive #{name} #{native.replace(' ', '_')} #HAYA #MelodicDeepHouse #ChillHouse #DarkChill #CarMusic #OrientalHouse #VocalHouse #ArabicMusic2026
+Related searches: arabic deep house, deep house mix 2026, night drive music, chill house mix, melodic deep house, arabic chill house, oriental house, vocal house, cafe music, lounge mix, dark chill, female arabic vocals
+
+#ArabicDeepHouse #DeepHouse #DeepHouseMix #NightDrive #ChillHouse #MelodicDeepHouse #ArabicMusic #OrientalHouse #VocalHouse #LoungeMusic #CarMusic #StudyMusic #CafeMusic #HouseMusic2026 #DarkMood #HAYA #{name} #{native_tag}
 """
 
 
 def build_tags(*, slug: str, name: str, native: str, hook: str) -> list[str]:
-    """Tag list aiming for ~500 chars when comma-joined in Studio."""
+    """High-volume SEO tags first; trim to YouTube ~500-char soft limit."""
+    # Order = search volume / ranking value. Skip ultra-niche filler.
     tags = [
+        # Broad genre (highest volume)
+        "deep house",
+        "arabic deep house",
+        "deep house mix",
+        "chill house",
+        "melodic deep house",
+        "house music",
+        "chill house mix",
+        "lounge music",
+        # Intent / use-case searches
+        "night drive music",
+        "night drive mix",
+        "car music",
+        "study music",
+        "cafe music",
+        "focus music",
+        "late night music",
+        # Arabic / oriental lane (EN + AR script for MENA discovery)
+        "arabic music",
+        "arabic chill house",
+        "oriental deep house",
+        "oriental house",
+        "middle eastern house",
+        "female arabic vocals",
+        "vocal house",
+        "دييب هاوس",
+        "موسيقى عربية",
+        "هاوس شرقي",
+        # Mood / year / format
+        "dark chill",
+        "dark mood",
+        "deep chill",
+        "arabic music 2026",
+        "house music 2026",
+        "35 minute mix",
+        "long mix",
+        # Song / brand identity last
+        name.lower(),
         slug,
         native,
         hook,
-        "arabic deep house",
-        "deep house mix",
-        "night drive music",
-        "melodic deep house",
-        "arabic chill house",
-        "oriental deep house",
-        "dark chill",
-        "female arabic vocals",
-        "car music",
-        "vocal house",
         "haya music",
-        "arabic music 2026",
-        "chill house mix",
-        "eastern deep house",
-        "late night house",
-        "arabic deep chill house mix",
-        f"dark mood {slug}",
-        "night vibes house",
-        "lounge deep house",
-        "emotional arabic house",
-        "oud deep house",
-        "four on the floor house",
-        "warm sub bass house",
-        "arabic night drive mix 2026",
-        "deep chill vocal house",
     ]
-    # Trim so comma-joined length stays near YouTube's ~500 soft limit.
-    joined: list[str] = []
+    # Dedupe (name.lower() often equals slug) while keeping order.
+    seen: set[str] = set()
+    unique: list[str] = []
     for tag in tags:
+        key = tag.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(tag)
+
+    joined: list[str] = []
+    for tag in unique:
         trial = ", ".join([*joined, tag])
         if len(trial) > 500:
             break
@@ -172,8 +211,8 @@ def build_song(entry: dict[str, Any]) -> dict[str, Any]:
         "wave": "haya",
         "youtubeFilename": f"{slug}-youtube.mp4",
         "reelFilename": f"{slug}-reel.mp4",
-        "audioFilename": f"{slug}_35min_human.mp3",
-        "bpm": 108,
+        "audioFilename": f"{slug}_35min.mp3",
+        "bpm": 104,
         "durationSec": 2100,
         "brand": BRAND_NAME,
         "playlist": PLAYLIST,
@@ -197,7 +236,6 @@ def _slug_aliases(songs: dict[str, dict[str, Any]]) -> dict[str, str]:
             aliases[stem] = slug
         for legacy in song.get("legacySlugs") or []:
             aliases[str(legacy)] = slug
-    # Keep old Yalil catalog aliases.
     aliases.update(
         {
             "haya-01-yalil-pulse": "yalil",
@@ -242,10 +280,13 @@ def main() -> int:
     path = export_metadata()
     songs = json.loads(path.read_text(encoding="utf-8"))["songs"]
     pending = [s for s, v in songs.items() if not v.get("published")]
+    sample = songs[pending[0]] if pending else next(iter(songs.values()))
     print(f"Exported: {path}")
     print(f"Songs: {len(songs)} brand={BRAND_NAME}")
     print(f"Already uploaded: yalil, noor")
     print(f"To schedule: {', '.join(pending)}")
+    print(f"Sample title ({len(sample['title'])} chars): {sample['title']}")
+    print(f"Sample tags ({len(', '.join(sample['tags']))} chars): {', '.join(sample['tags'][:8])}…")
     print("Import this file in Batch Upload Studio (HAYA brand).")
     return 0
 
