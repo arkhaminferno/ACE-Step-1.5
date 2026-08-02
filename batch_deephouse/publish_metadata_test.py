@@ -20,16 +20,16 @@ from batch_deephouse.publish_metadata import (
 class TestHayaPublishFields(unittest.TestCase):
     """Titles/tags front-load searchable deep-house terms."""
 
-    def test_title_front_loads_genre_keywords(self) -> None:
-        """Title leads with Arabic Deep House Mix, then song + mood."""
+    def test_title_starts_with_english_then_arabic_name(self) -> None:
+        """Title is Name + Arabic, then genre/mood suffix."""
         title = build_title(name="Hanan", native="حنان")
         self.assertEqual(
             title,
-            "Arabic Deep House Mix 2026 | Hanan حنان — "
+            "Hanan حنان — Arabic Deep House Mix 2026 | "
             "Dark Mood Night Drive Chill",
         )
         self.assertLessEqual(len(title), 100)
-        self.assertTrue(title.startswith("Arabic Deep House Mix"))
+        self.assertTrue(title.startswith("Hanan حنان —"))
 
     def test_tags_prioritize_high_volume_seo(self) -> None:
         """Tags start with broad searchable terms and stay ≤500 chars."""
@@ -57,6 +57,7 @@ class TestHayaPublishFields(unittest.TestCase):
         first_line = song["description"].splitlines()[0]
         self.assertIn("Arabic Deep House Mix 2026", first_line)
         self.assertIn("35-minute", song["description"])
+        self.assertIn("@hayamusic.official", song["description"])
 
     def test_build_song_marks_published(self) -> None:
         """Catalog published flag flows into the song object."""
@@ -93,9 +94,8 @@ class TestExportMetadata(unittest.TestCase):
             self.assertTrue(data["songs"]["yalil"]["published"])
             self.assertTrue(data["songs"]["noor"]["published"])
             self.assertTrue((out_dir / "safa" / "safa.youtube.json").is_file())
-            self.assertTrue(
-                data["songs"]["safa"]["title"].startswith("Arabic Deep House Mix")
-            )
+            self.assertEqual(data["handle"], "@hayamusic.official")
+            self.assertTrue(data["songs"]["safa"]["title"].startswith("Safa صفاء —"))
             self.assertEqual(
                 data["slugAliases"]["safa-youtube"],
                 "safa",

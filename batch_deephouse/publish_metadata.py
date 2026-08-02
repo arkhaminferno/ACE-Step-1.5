@@ -14,7 +14,7 @@ METADATA_DIR = BATCH_ROOT / "metadata"
 METADATA_PATH = METADATA_DIR / "metadata.json"
 
 BRAND_NAME = "HAYA"
-BRAND_HANDLE = "@hayamusic"
+BRAND_HANDLE = "@hayamusic.official"
 BRAND_TAGLINE = "Arabic Deep House · Night Drive · Dark Chill"
 PLAYLIST = "HAYA — Arabic Deep Chill House | Night Drive Mixes 2026"
 
@@ -71,13 +71,9 @@ SONG_CATALOG: list[dict[str, Any]] = [
 
 
 def build_title(*, name: str, native: str) -> str:
-    """SEO title: high-volume genre terms first, then song + mood (≤100 chars).
-
-    Unique Arabic names alone rarely get searched; front-load
-    \"Arabic Deep House Mix\" / night-drive terms people actually type.
-    """
+    """Song-first title: English + Arabic, then genre/mood (≤100 chars)."""
     return (
-        f"Arabic Deep House Mix 2026 | {name} {native} — "
+        f"{name} {native} — Arabic Deep House Mix 2026 | "
         f"Dark Mood Night Drive Chill"
     )
 
