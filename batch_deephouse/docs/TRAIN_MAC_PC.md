@@ -52,6 +52,10 @@ Full Windows steps, time table, and **how to push the adapter for Mac `git pull`
 
 → **`batch_deephouse/docs/WINDOWS_TRAIN.md`**
 
+**All three projects (full instrument lists + space/time):**
+
+→ **`batch_deephouse/docs/ALL_PROJECTS_INSTRUMENT_TRAINING.md`**
+
 ---
 
 ## Optional: try train on this Mac anyway?
