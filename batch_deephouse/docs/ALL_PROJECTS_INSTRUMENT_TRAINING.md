@@ -39,6 +39,9 @@ Adapter out: `output/soulcalm_piano_dora/` → publish to `batch_soulcalm/adapte
 Dataset: `batch_birthday/datasets/birthday_edm_dataset/`  
 Adapter out: `output/birthday_edm_dora/` → publish to `batch_birthday/adapters/birthday_edm/`
 
+**Windows first-time:** if that folder is empty, copy templates from:
+`batch_deephouse/datasets/templates/birthday_edm_dataset/` → `batch_birthday/datasets/birthday_edm_dataset/`
+
 ---
 
 ## How many stems (full coverage)

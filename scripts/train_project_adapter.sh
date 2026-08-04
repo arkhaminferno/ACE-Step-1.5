@@ -71,6 +71,16 @@ need_sidestep() {
 need_audio() {
   local count
   count="$(find "$AUDIO_DIR" -type f \( -iname '*.mp3' -o -iname '*.wav' -o -iname '*.flac' \) ! -path '*/examples/*' | wc -l | tr -d ' ')"
+  # Seed birthday examples from tracked templates if folder is empty.
+  if [[ "$LABEL" == "birthday" && ! -d "$AUDIO_DIR/examples" ]]; then
+    local tpl="$ROOT/batch_deephouse/datasets/templates/birthday_edm_dataset"
+    if [[ -d "$tpl" ]]; then
+      mkdir -p "$AUDIO_DIR"
+      cp -R "$tpl/." "$AUDIO_DIR/"
+      echo "Seeded birthday dataset templates from $tpl"
+    fi
+  fi
+  count="$(find "$AUDIO_DIR" -type f \( -iname '*.mp3' -o -iname '*.wav' -o -iname '*.flac' \) ! -path '*/examples/*' | wc -l | tr -d ' ')"
   [[ "$count" -gt 0 ]] || die "No stems in $AUDIO_DIR — add .mp3/.wav + .json (see examples/)"
   echo "Found $count stem(s) in $AUDIO_DIR"
 }
