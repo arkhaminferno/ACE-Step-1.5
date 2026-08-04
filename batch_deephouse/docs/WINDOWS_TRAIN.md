@@ -16,53 +16,112 @@ Mac M4 Pro: use for **generate only** after `git pull` (minutes per song).
 
 ---
 
-## Windows one-time setup
+## From zero on a fresh Windows PC (RTX 5070)
 
-1. Install **Git**, **Git LFS**, **NVIDIA drivers**, **CUDA-capable GPU ≥16 GB VRAM**.
-2. Install [uv](https://docs.astral.sh/uv/).
-3. Clone / pull this repo:
+Yes — you install several things once. Follow **in order**.
 
-```bat
+**VRAM note:** RTX 5070 is often **12 GB**. Training can work with **rank 32** + lower epochs.
+If you OOM, drop to rank 16. Ideal is ≥16 GB, but 12 GB is usable with tight settings.
+
+### 1) NVIDIA driver
+- Install latest Studio/Game Ready driver from nvidia.com → reboot  
+- Check Task Manager → Performance → GPU shows RTX 5070  
+
+### 2) Git + Git LFS
+1. Install **Git for Windows**: https://git-scm.com/download/win  
+   (enable “Git from the command line”)  
+2. Open **Git Bash**:
+```bash
 git lfs install
+```
+If missing: https://git-lfs.com then `git lfs install` again.
+
+### 3) uv
+**PowerShell:**
+```powershell
+irm https://astral.sh/uv/install.ps1 | iex
+```
+Reopen terminal. Check: `uv --version`
+
+### 4) Clone repo
+**Git Bash** (change YOURNAME):
+```bash
+cd /c/Users/YOURNAME/Documents
 git clone https://github.com/arkhaminferno/ACE-Step-1.5.git
 cd ACE-Step-1.5
+git lfs pull
 git pull
 ```
 
-4. Ensure `checkpoints\acestep-v15-base` exists (same as Mac — copy from Mac USB or re-download).
-5. Side-Step (already vendored as `Side-Step/` in repo, or sibling):
+### 5) Copy ACE-Step base weights from Mac
+Copy this folder from Mac USB into the Windows clone:
 
+```
+checkpoints/acestep-v15-base/
+```
+
+(Also copy `checkpoints/vae` if present.)
+
+### 6) Install Side-Step
 ```bat
 cd Side-Step
 install_windows.bat
 cd ..
 ```
 
-6. Put stems in:
+### 7) Add stems (do this before train)
+Need **20+** dry clips (repo only has 2). Put under:
 
 ```
 batch_deephouse\datasets\arabic_house_dataset\
-  my_oud.mp3
-  my_oud.json
-  my_oud.lyrics.txt
-  ...
 ```
 
-Copy JSON templates from `examples\`.
+Each file needs matching `.json` + `.lyrics.txt` (copy from `examples\`).
+
+### 8) Train — Git Bash from repo root
+
+```bash
+export SIDESTEP_DIR="$PWD/Side-Step"
+./batch_deephouse/scripts/phase3_dora_train.sh preprocess
+./batch_deephouse/scripts/phase3_dora_train.sh analyze
+```
+
+**Then train (5070 / 12 GB — tight):**
+```bash
+cd Side-Step
+uv run sidestep --yes train \
+  --checkpoint-dir ../checkpoints \
+  --model base \
+  --dataset-dir ../batch_deephouse/datasets/preprocessed_tensors \
+  --output-dir ../output/arabic_deep_house_dora \
+  --adapter dora \
+  --rank 32 \
+  --target-modules q_proj k_proj v_proj o_proj condition_embedder \
+  --timestep-mode continuous \
+  --learning-rate 1e-4 \
+  --epochs 400
+cd ..
+```
+
+If that OOMs, change `--rank 32` → `--rank 16`.
+
+**If you have 16 GB+ VRAM**, you can instead:
+```bash
+./batch_deephouse/scripts/phase3_dora_train.sh train
+```
 
 ---
 
-## Train (Git Bash or WSL from repo root)
+## Train (Git Bash — short form, after setup)
 
 ```bash
-export SIDESTEP_DIR="$PWD/Side-Step"   # if using in-repo Side-Step
+export SIDESTEP_DIR="$PWD/Side-Step"
 ./batch_deephouse/scripts/phase3_dora_train.sh preprocess
 ./batch_deephouse/scripts/phase3_dora_train.sh analyze
 ./batch_deephouse/scripts/phase3_dora_train.sh train
 ```
 
-Or PowerShell equivalent via `Side-Step\sidestep.bat` — see Side-Step README.
-
+Or PowerShell via `Side-Step\sidestep.bat` — see Side-Step README.
 Output:
 
 ```

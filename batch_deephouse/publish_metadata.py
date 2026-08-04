@@ -62,9 +62,9 @@ def _catalog_entry(slug: str, *, published: bool) -> dict[str, Any]:
     }
 
 
-# Locked Aug 2026 YouTube batch + prior uploads (yalil/noor).
+# Locked Aug 2026 YouTube batch (all uploaded) + prior uploads (yalil/noor).
 SONG_CATALOG: list[dict[str, Any]] = [
-    *[_catalog_entry(slug, published=False) for slug in LOCKED_YOUTUBE_SLUGS],
+    *[_catalog_entry(slug, published=True) for slug in LOCKED_YOUTUBE_SLUGS],
     _catalog_entry("yalil", published=True),
     _catalog_entry("noor", published=True),
 ]
