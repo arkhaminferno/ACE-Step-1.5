@@ -6,7 +6,8 @@
 #      with matching .json (+ optional .lyrics.txt)
 #   2. Side-Step at ../Side-Step (git clone https://github.com/koda-dernet/Side-Step.git)
 #   3. uv on PATH; ACE-Step checkpoints under ./checkpoints
-#   4. NVIDIA CUDA recommended (MPS training is experimental)
+#   4. NVIDIA CUDA strongly recommended (Mac MPS often OOMs — see docs/TRAIN_MAC_PC.md)
+#      Train on Windows/Linux GPU, then copy the adapter to Mac for Recipe 4 generation.
 #
 # Usage (from ACE-Step-1.5 root):
 #   source batch_deephouse/scripts/env_mps.sh
@@ -17,7 +18,16 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-SIDESTEP_DIR="${SIDESTEP_DIR:-$(cd "$ROOT/.." && pwd)/Side-Step}"
+SIDESTEP_DIR="${SIDESTEP_DIR:-}"
+if [[ -z "$SIDESTEP_DIR" ]]; then
+  if [[ -d "$(cd "$ROOT/.." && pwd)/Side-Step" ]]; then
+    SIDESTEP_DIR="$(cd "$ROOT/.." && pwd)/Side-Step"
+  elif [[ -d "$ROOT/Side-Step" ]]; then
+    SIDESTEP_DIR="$ROOT/Side-Step"
+  else
+    SIDESTEP_DIR="$(cd "$ROOT/.." && pwd)/Side-Step"
+  fi
+fi
 AUDIO_DIR="${AUDIO_DIR:-$ROOT/batch_deephouse/datasets/arabic_house_dataset}"
 DATASET_JSON="${DATASET_JSON:-$AUDIO_DIR/dataset.json}"
 TENSOR_DIR="${TENSOR_DIR:-$ROOT/batch_deephouse/datasets/preprocessed_tensors}"

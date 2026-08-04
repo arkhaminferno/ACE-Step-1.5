@@ -4,10 +4,25 @@ from __future__ import annotations
 
 from pathlib import Path
 
-# Default Side-Step train output for the Arabic house DoRA run
-DEFAULT_DORA_ROOT = (
+# Prefer git-published adapter (Mac pull); fall back to local train output.
+_REPO_ADAPTER_ROOT = (
+    Path(__file__).resolve().parent / "adapters" / "arabic_deep_house"
+)
+_TRAIN_OUTPUT_ROOT = (
     Path(__file__).resolve().parents[1] / "output" / "arabic_deep_house_dora"
 )
+
+
+def default_dora_root() -> Path:
+    """Return published adapter root if present, else training output root."""
+    if (_REPO_ADAPTER_ROOT / "best").is_dir() and any(
+        (_REPO_ADAPTER_ROOT / "best").glob("adapter_model.*")
+    ):
+        return _REPO_ADAPTER_ROOT
+    return _TRAIN_OUTPUT_ROOT
+
+
+DEFAULT_DORA_ROOT = default_dora_root()
 
 
 def resolve_adapter_dir(dora_root: Path, epoch: int | str) -> Path:
@@ -31,6 +46,9 @@ def resolve_adapter_dir(dora_root: Path, epoch: int | str) -> Path:
 
     if token in {"best", "final"}:
         path = root / token
+        # Published layout only has best/; map final → best when needed.
+        if token == "final" and not path.is_dir() and (root / "best").is_dir():
+            path = root / "best"
     elif token.isdigit():
         path = root / "checkpoints" / f"epoch_{int(token)}"
     else:
@@ -41,8 +59,8 @@ def resolve_adapter_dir(dora_root: Path, epoch: int | str) -> Path:
     if not path.is_dir():
         raise FileNotFoundError(
             f"Adapter not found: {path}\n"
-            f"Wait for Side-Step to save (every 50 epochs) under "
-            f"{root / 'checkpoints'}"
+            f"Train on Windows then run publish_adapter_to_repo.sh, or wait for "
+            f"Side-Step checkpoints under {_TRAIN_OUTPUT_ROOT / 'checkpoints'}"
         )
     return path.resolve()
 

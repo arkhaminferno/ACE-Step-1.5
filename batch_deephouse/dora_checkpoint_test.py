@@ -27,7 +27,14 @@ class TestResolveAdapterDir(unittest.TestCase):
             target.mkdir()
             self.assertEqual(resolve_adapter_dir(root, "best"), target.resolve())
 
-    def test_missing_raises(self) -> None:
+    def test_final_falls_back_to_best(self) -> None:
+        """Published repo layout may only ship best/."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = root / "best"
+            target.mkdir()
+            self.assertEqual(resolve_adapter_dir(root, "final"), target.resolve())
+
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaises(FileNotFoundError):
                 resolve_adapter_dir(Path(tmp), 50)

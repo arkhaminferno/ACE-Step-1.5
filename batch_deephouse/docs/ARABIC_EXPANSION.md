@@ -31,16 +31,23 @@ Operational docs live in project skills:
 |---|---|
 | Side-Step CLI wrapper `phase3_dora_train.sh` | Done (correct `train.py fixed` CLI) |
 | `build_dataset_json.py` (sidecars → Side-Step JSON) | Done |
-| Audio stems on disk | **BLOCKED — none found** (only examples JSON/lyrics) |
-| Side-Step sibling install | **BLOCKED — not cloned** |
-| `acestep-v15-base` / `sft` weights | Missing (turbo present; script falls back) |
+| Audio stems on disk | **2 stems** (oud + ney) — need **20–50+** for a real adapter |
+| Side-Step sibling install | Clone to `../Side-Step` (see `TRAIN_MAC_PC.md`) |
+| `acestep-v15-base` | Present under `checkpoints/` |
+| Mac vs PC | **Train on NVIDIA Windows/Linux; generate on Mac** — see `TRAIN_MAC_PC.md` |
 
-### Run when ready
+### Mac (M4 Pro 24 GB) vs Windows PC
+
+- **Do not rely on this Mac for full DoRA training** — MPS often OOMs (even 36 GB Macs).
+- **Train on a Windows NVIDIA PC (≥16 GB VRAM)** → copy `output/arabic_deep_house_dora/best` to Mac → load LoRA → Recipe 4 generate.
+- Full cross-machine steps: **`batch_deephouse/docs/TRAIN_MAC_PC.md`**.
+
+### Run when ready (on the CUDA training machine)
 
 ```bash
 # 1) Put .mp3/.wav stems next to matching .json in arabic_house_dataset/
-# 2) Clone Side-Step + uv sync (see training.md)
+# 2) Clone Side-Step: git clone https://github.com/koda-dernet/Side-Step.git ../Side-Step
 ./batch_deephouse/scripts/phase3_dora_train.sh preprocess
-./batch_deephouse/scripts/phase3_dora_train.sh estimate
+./batch_deephouse/scripts/phase3_dora_train.sh analyze
 ./batch_deephouse/scripts/phase3_dora_train.sh train
 ```
