@@ -22,6 +22,23 @@ export PATH="${HOME}/.local/bin:${PATH}"
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 
+# Git Bash /c/Users/... → C:/Users/... for Windows-native Python (uv).
+to_native_path() {
+  local p="$1"
+  if command -v cygpath >/dev/null 2>&1; then
+    cygpath -m "$p"
+    return
+  fi
+  # Fallback: /c/foo → C:/foo
+  if [[ "$p" =~ ^/[a-zA-Z]/ ]]; then
+    local drive="${p:1:1}"
+    local rest="${p:2}"
+    echo "${drive^^}:/${rest#/}"
+    return
+  fi
+  echo "$p"
+}
+
 _python_ok() {
   "$@" -c "import sys" >/dev/null 2>&1
 }
@@ -88,21 +105,28 @@ mkdir -p "$DEST_ROOT/best"
 cp -R "$SRC/." "$DEST_ROOT/best/"
 rm -f "$DEST_ROOT/best/training_state.pt" "$DEST_ROOT/best/"*.pt 2>/dev/null || true
 
+# Native paths for Windows Python (uv); macOS paths pass through unchanged.
+NATIVE_ROOT="$(to_native_path "$ROOT")"
+NATIVE_DEST="$(to_native_path "$DEST_ROOT")"
+
 run_python "
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+root = Path(r'''${NATIVE_ROOT}''')
+dest = Path(r'''${NATIVE_DEST}''')
+dest.mkdir(parents=True, exist_ok=True)
 meta = {
     'name': '${NAME}',
     'project': '${PROJECT}',
     'source_epoch': '${EPOCH}',
     'published_at': datetime.now(timezone.utc).isoformat(),
-    'path': str(Path('${DEST_ROOT}/best').relative_to('${ROOT}')),
+    'path': str((dest / 'best').relative_to(root)).replace('\\\\', '/'),
 }
-Path('${DEST_ROOT}/ADAPTER_META.json').write_text(
+(dest / 'ADAPTER_META.json').write_text(
     json.dumps(meta, indent=2) + chr(10), encoding='utf-8'
 )
-print('Wrote', Path('${DEST_ROOT}/ADAPTER_META.json'))
+print('Wrote', dest / 'ADAPTER_META.json')
 "
 
 echo "Published → $DEST_ROOT/best"
