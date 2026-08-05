@@ -2,13 +2,13 @@
 
 This automates *free legal* stems. It cannot log into Splice/Loopmasters.
 
-Setup (once):
-  1. Create account: https://freesound.org
-  2. Get API key: https://freesound.org/apiv2/apply
-  3. Set env:  set FREESOUND_API_KEY=your_key   (Windows CMD)
-              export FREESOUND_API_KEY=your_key (Git Bash)
+Setup (once) — preferred: repo-local ``.env`` (gitignored):
+  1. Create account + API key: https://freesound.org/apiv2/apply
+  2. In repo root create ``.env`` with:
+       FREESOUND_API_KEY=your_client_secret
+  3. Run the commands below (no global Windows env needed)
 
-Usage (repo root, Git Bash or PowerShell with curl/python):
+Usage (repo root):
   PYTHONPATH=. python -m batch_deephouse.datasets.fetch_freesound_stems --dry-run
   PYTHONPATH=. python -m batch_deephouse.datasets.fetch_freesound_stems
   PYTHONPATH=. python -m batch_deephouse.datasets.fetch_freesound_stems --limit 20
@@ -26,6 +26,7 @@ import urllib.request
 from pathlib import Path
 
 DEFAULT_OUT = Path(__file__).resolve().parent / "arabic_house_dataset_v2"
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # slot basename prefix → Freesound search query (instrument-focused)
 SEARCH_FOR_PREFIX: list[tuple[str, str]] = [
@@ -48,14 +49,39 @@ SEARCH_FOR_PREFIX: list[tuple[str, str]] = [
 ]
 
 
+def load_repo_dotenv(repo_root: Path | None = None) -> Path | None:
+    """Load KEY=VALUE pairs from repo ``.env`` into ``os.environ`` (no overwrite).
+
+    Returns:
+        Path to ``.env`` if found, else None.
+    """
+    root = repo_root or REPO_ROOT
+    env_path = root / ".env"
+    if not env_path.is_file():
+        return None
+    for raw in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        if line.startswith("export "):
+            line = line[len("export ") :].strip()
+        key, _, val = line.partition("=")
+        key = key.strip()
+        val = val.strip().strip("'").strip('"')
+        if key and key not in os.environ:
+            os.environ[key] = val
+    return env_path
+
+
 def _api_key() -> str:
+    load_repo_dotenv()
     key = (os.environ.get("FREESOUND_API_KEY") or "").strip()
     if not key:
         raise SystemExit(
             "Missing FREESOUND_API_KEY.\n"
-            "1) https://freesound.org/apiv2/apply\n"
-            "2) export FREESOUND_API_KEY=...   (Git Bash)\n"
-            "   set FREESOUND_API_KEY=...      (CMD)"
+            "Create a repo-local .env file (gitignored) with:\n"
+            "  FREESOUND_API_KEY=your_client_secret\n"
+            "Or export FREESOUND_API_KEY in the shell."
         )
     return key
 
