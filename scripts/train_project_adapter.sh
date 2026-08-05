@@ -33,9 +33,9 @@ resolve_paths() {
   local p="$1"
   case "$p" in
     arabic|deephouse|haya)
-      AUDIO_DIR="$ROOT/batch_deephouse/datasets/arabic_house_dataset"
-      TENSOR_DIR="$ROOT/batch_deephouse/datasets/preprocessed_tensors_arabic"
-      OUTPUT_DIR="$ROOT/output/arabic_deep_house_dora"
+      AUDIO_DIR="${AUDIO_DIR:-$ROOT/batch_deephouse/datasets/arabic_house_dataset_v2}"
+      TENSOR_DIR="${TENSOR_DIR:-$ROOT/batch_deephouse/datasets/preprocessed_tensors_arabic_v2}"
+      OUTPUT_DIR="${OUTPUT_DIR:-$ROOT/output/arabic_deep_house_dora}"
       LABEL="arabic"
       ;;
     soulcalm|piano)
