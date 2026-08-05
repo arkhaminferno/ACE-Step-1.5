@@ -50,16 +50,29 @@ SEARCH_FOR_PREFIX: list[tuple[str, str]] = [
 
 
 def load_repo_dotenv(repo_root: Path | None = None) -> Path | None:
-    """Load KEY=VALUE pairs from repo ``.env`` into ``os.environ`` (no overwrite).
+    """Load KEY=VALUE pairs from repo ``.env`` into ``os.environ``.
+
+    Overwrites empty existing values. Searches repo root and current working dir.
 
     Returns:
         Path to ``.env`` if found, else None.
     """
+    candidates: list[Path] = []
     root = repo_root or REPO_ROOT
-    env_path = root / ".env"
-    if not env_path.is_file():
+    candidates.append(root / ".env")
+    cwd_env = Path.cwd() / ".env"
+    if cwd_env.resolve() != candidates[0].resolve():
+        candidates.append(cwd_env)
+
+    env_path: Path | None = None
+    for path in candidates:
+        if path.is_file():
+            env_path = path
+            break
+    if env_path is None:
         return None
-    for raw in env_path.read_text(encoding="utf-8").splitlines():
+
+    for raw in env_path.read_text(encoding="utf-8-sig").splitlines():
         line = raw.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
@@ -68,17 +81,24 @@ def load_repo_dotenv(repo_root: Path | None = None) -> Path | None:
         key, _, val = line.partition("=")
         key = key.strip()
         val = val.strip().strip("'").strip('"')
-        if key and key not in os.environ:
+        if not key:
+            continue
+        # Fill missing or empty env vars from .env
+        if key not in os.environ or not str(os.environ.get(key, "")).strip():
             os.environ[key] = val
     return env_path
 
 
 def _api_key() -> str:
-    load_repo_dotenv()
+    loaded = load_repo_dotenv()
     key = (os.environ.get("FREESOUND_API_KEY") or "").strip()
     if not key:
+        hint = f"Looked for .env at {REPO_ROOT / '.env'} and {Path.cwd() / '.env'}"
+        if loaded:
+            hint = f"Found {loaded} but FREESOUND_API_KEY was empty"
         raise SystemExit(
             "Missing FREESOUND_API_KEY.\n"
+            f"{hint}\n"
             "Create a repo-local .env file (gitignored) with:\n"
             "  FREESOUND_API_KEY=your_client_secret\n"
             "Or export FREESOUND_API_KEY in the shell."
