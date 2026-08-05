@@ -49,6 +49,25 @@ class BuildDatasetJsonTests(unittest.TestCase):
             self.assertEqual(sample["bpm"], 108)
             self.assertEqual(sample["audio_path"], "oud_bayati_108_01.mp3")
 
+    def test_normalizes_windows_paths_in_json(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            sub = root / "stems"
+            sub.mkdir()
+            audio = sub / "oud_bayati_108_01.mp3"
+            audio.write_bytes(b"\x00" * 64)
+            (sub / "oud_bayati_108_01.json").write_text(
+                json.dumps({"caption": "Dry oud solo"}),
+                encoding="utf-8",
+            )
+            out = root / "dataset.json"
+
+            _, _ = build_dataset_json(root, out)
+
+            sample = json.loads(out.read_text(encoding="utf-8"))["samples"][0]
+            self.assertEqual(sample["audio_path"], "stems/oud_bayati_108_01.mp3")
+            self.assertNotIn("\\", sample["audio_path"])
+
     def test_raises_when_no_audio(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Train a project DoRA adapter (arabic | soulcalm | birthday | all).
 #
-# Usage (repo root, Git Bash on Windows):
-#   export SIDESTEP_DIR="$PWD/Side-Step"
+# Usage (repo root, macOS or Git Bash on Windows):
+#   export SIDESTEP_DIR="$PWD/../Side-Step"   # or sibling Downloads/Side-Step
 #   ./scripts/train_project_adapter.sh arabic preprocess
 #   ./scripts/train_project_adapter.sh arabic analyze
 #   ./scripts/train_project_adapter.sh arabic train
@@ -86,17 +86,25 @@ need_audio() {
 }
 
 build_json() {
-  if [[ -f "$ROOT/batch_deephouse/datasets/build_dataset_json.py" ]]; then
-    PYTHONPATH="$ROOT" "${ROOT}/python_embeded/bin/python3.11" \
-      -m batch_deephouse.datasets.build_dataset_json \
-      --dataset-dir "$AUDIO_DIR" --output "$DATASET_JSON" 2>/dev/null \
-    || PYTHONPATH="$ROOT" py -3 -m batch_deephouse.datasets.build_dataset_json \
-      --dataset-dir "$AUDIO_DIR" --output "$DATASET_JSON" 2>/dev/null \
-    || PYTHONPATH="$ROOT" python -m batch_deephouse.datasets.build_dataset_json \
-      --dataset-dir "$AUDIO_DIR" --output "$DATASET_JSON"
-  else
+  if [[ ! -f "$ROOT/batch_deephouse/datasets/build_dataset_json.py" ]]; then
     die "build_dataset_json missing"
   fi
+  local py=""
+  if [[ -x "${ROOT}/python_embeded/bin/python3.11" ]]; then
+    py="${ROOT}/python_embeded/bin/python3.11"
+  elif command -v python3 >/dev/null 2>&1; then
+    py="python3"
+  elif command -v py >/dev/null 2>&1; then
+    PYTHONPATH="$ROOT" py -3 -m batch_deephouse.datasets.build_dataset_json \
+      --dataset-dir "$AUDIO_DIR" --output "$DATASET_JSON"
+    return
+  elif command -v python >/dev/null 2>&1; then
+    py="python"
+  else
+    die "No Python found (need python3, py -3, or ${ROOT}/python_embeded/bin/python3.11)"
+  fi
+  PYTHONPATH="$ROOT" "$py" -m batch_deephouse.datasets.build_dataset_json \
+    --dataset-dir "$AUDIO_DIR" --output "$DATASET_JSON"
 }
 
 do_preprocess() {
