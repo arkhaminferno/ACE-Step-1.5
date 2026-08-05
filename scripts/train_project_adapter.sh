@@ -85,26 +85,52 @@ need_audio() {
   echo "Found $count stem(s) in $AUDIO_DIR"
 }
 
+_python_ok() {
+  "$@" -c "import sys" >/dev/null 2>&1
+}
+
+_run_build_json() {
+  PYTHONPATH="$ROOT" "$@" -m batch_deephouse.datasets.build_dataset_json \
+    --dataset-dir "$AUDIO_DIR" --output "$DATASET_JSON"
+}
+
 build_json() {
   if [[ ! -f "$ROOT/batch_deephouse/datasets/build_dataset_json.py" ]]; then
     die "build_dataset_json missing"
   fi
-  local py=""
-  if [[ -x "${ROOT}/python_embeded/bin/python3.11" ]]; then
-    py="${ROOT}/python_embeded/bin/python3.11"
-  elif command -v python3 >/dev/null 2>&1; then
-    py="python3"
-  elif command -v py >/dev/null 2>&1; then
-    PYTHONPATH="$ROOT" py -3 -m batch_deephouse.datasets.build_dataset_json \
-      --dataset-dir "$AUDIO_DIR" --output "$DATASET_JSON"
+
+  # Mac bundle python (embedded ACE-Step)
+  if [[ -x "${ROOT}/python_embeded/bin/python3.11" ]] \
+      && _python_ok "${ROOT}/python_embeded/bin/python3.11"; then
+    _run_build_json "${ROOT}/python_embeded/bin/python3.11"
     return
-  elif command -v python >/dev/null 2>&1; then
-    py="python"
-  else
-    die "No Python found (need python3, py -3, or ${ROOT}/python_embeded/bin/python3.11)"
   fi
-  PYTHONPATH="$ROOT" "$py" -m batch_deephouse.datasets.build_dataset_json \
-    --dataset-dir "$AUDIO_DIR" --output "$DATASET_JSON"
+
+  # Side-Step uv env — reliable on Windows (avoids Microsoft Store python stub)
+  if [[ -d "$SIDESTEP_DIR" ]] && command -v uv >/dev/null 2>&1; then
+    echo "Building dataset.json via Side-Step uv python..."
+    (cd "$SIDESTEP_DIR" && PYTHONPATH="$ROOT" uv run python \
+      -m batch_deephouse.datasets.build_dataset_json \
+      --dataset-dir "$AUDIO_DIR" --output "$DATASET_JSON")
+    return
+  fi
+
+  if command -v py >/dev/null 2>&1 && _python_ok py -3; then
+    _run_build_json py -3
+    return
+  fi
+
+  if command -v python3 >/dev/null 2>&1 && _python_ok python3; then
+    _run_build_json python3
+    return
+  fi
+
+  if command -v python >/dev/null 2>&1 && _python_ok python; then
+    _run_build_json python
+    return
+  fi
+
+  die "No working Python found. Set SIDESTEP_DIR + uv, or install Python 3."
 }
 
 do_preprocess() {
