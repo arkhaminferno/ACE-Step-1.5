@@ -90,6 +90,8 @@ build_json() {
     PYTHONPATH="$ROOT" "${ROOT}/python_embeded/bin/python3.11" \
       -m batch_deephouse.datasets.build_dataset_json \
       --dataset-dir "$AUDIO_DIR" --output "$DATASET_JSON" 2>/dev/null \
+    || PYTHONPATH="$ROOT" py -3 -m batch_deephouse.datasets.build_dataset_json \
+      --dataset-dir "$AUDIO_DIR" --output "$DATASET_JSON" 2>/dev/null \
     || PYTHONPATH="$ROOT" python -m batch_deephouse.datasets.build_dataset_json \
       --dataset-dir "$AUDIO_DIR" --output "$DATASET_JSON"
   else

@@ -1,8 +1,7 @@
 """Build Side-Step ``dataset.json`` from audio + per-file JSON sidecars.
 
-Scans a dataset folder for ``.mp3`` / ``.wav`` / ``.flac`` files and pairs each
-with a matching ``<stem>.json`` (and optional ``<stem>.lyrics.txt``) using the
-ACE-Step dataset builder conventions.
+Stdlib-only so Windows Git Bash can run this without ACE-Step/torch/loguru installed.
+Side-Step ``preprocess`` recomputes audio duration from the files.
 
 Usage (repo root):
   PYTHONPATH=. python -m batch_deephouse.datasets.build_dataset_json \\
@@ -13,22 +12,101 @@ Usage (repo root):
 from __future__ import annotations
 
 import argparse
+import json
+import uuid
+from datetime import datetime
 from pathlib import Path
+from typing import Any
 
-from acestep.training.dataset_builder_modules.builder import DatasetBuilder
-
-AUDIO_EXTS = {".mp3", ".wav", ".flac", ".ogg", ".opus"}
+AUDIO_EXTS = {".mp3", ".wav", ".flac", ".ogg", ".opus", ".m4a"}
 
 
-def _relativize_audio_paths(samples: list, json_path: Path) -> None:
-    """Store audio paths relative to the dataset JSON parent when possible."""
-    base = json_path.parent.resolve()
-    for sample in samples:
+def _read_text(path: Path) -> str:
+    """Read UTF-8 text; return empty string if missing."""
+    if not path.is_file():
+        return ""
+    return path.read_text(encoding="utf-8-sig", errors="replace").strip()
+
+
+def _load_json_sidecar(audio_path: Path) -> dict[str, Any]:
+    """Load ``<stem>.json`` metadata sidecar if present."""
+    json_path = audio_path.with_suffix(".json")
+    if not json_path.is_file():
+        return {}
+    try:
+        data = json.loads(json_path.read_text(encoding="utf-8-sig"))
+    except json.JSONDecodeError:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _load_lyrics(audio_path: Path) -> tuple[str, bool]:
+    """Load lyrics from ``.lyrics.txt`` then legacy ``.txt``."""
+    stem = audio_path.with_suffix("")
+    for suffix in (".lyrics.txt", ".txt"):
+        content = _read_text(Path(str(stem) + suffix))
+        if content:
+            return content, True
+    return "", False
+
+
+def _parse_bpm(raw: Any) -> int | None:
+    """Parse BPM from sidecar; return None when invalid."""
+    if raw in (None, ""):
+        return None
+    try:
+        return int(float(raw))
+    except (TypeError, ValueError):
+        return None
+
+
+def _scan_samples(dataset_dir: Path, *, custom_tag: str = "") -> list[dict[str, Any]]:
+    """Collect ACE-Step-compatible sample dicts from *dataset_dir*."""
+    samples: list[dict[str, Any]] = []
+    for audio_path in sorted(dataset_dir.rglob("*")):
+        if not audio_path.is_file():
+            continue
+        if audio_path.suffix.lower() not in AUDIO_EXTS:
+            continue
+        if "examples" in audio_path.parts:
+            continue
+
+        meta = _load_json_sidecar(audio_path)
+        lyrics_raw, has_lyrics = _load_lyrics(audio_path)
+        caption = str(meta.get("caption", "") or "").strip()
+        if not caption:
+            caption = audio_path.stem.replace("_", " ").replace("-", " ")
+
+        lyrics = lyrics_raw if has_lyrics else "[Instrumental]"
+        is_instrumental = not has_lyrics or "[Instrumental]" in lyrics_raw
+
         try:
-            audio = Path(sample.audio_path).resolve()
-            sample.audio_path = str(audio.relative_to(base))
+            rel_audio = str(audio_path.resolve().relative_to(dataset_dir.resolve()))
         except ValueError:
-            pass
+            rel_audio = str(audio_path)
+
+        samples.append(
+            {
+                "id": uuid.uuid4().hex[:8],
+                "audio_path": rel_audio.replace("\\", "/"),
+                "filename": audio_path.name,
+                "caption": caption,
+                "genre": str(meta.get("genre", "") or ""),
+                "lyrics": lyrics,
+                "raw_lyrics": lyrics_raw,
+                "formatted_lyrics": "",
+                "bpm": _parse_bpm(meta.get("bpm")),
+                "keyscale": str(meta.get("keyscale", meta.get("key", "")) or ""),
+                "timesignature": str(meta.get("timesignature", meta.get("signature", "")) or ""),
+                "duration": 0,
+                "language": str(meta.get("language", "unknown") or "unknown"),
+                "is_instrumental": is_instrumental,
+                "custom_tag": str(meta.get("custom_tag", custom_tag) or custom_tag),
+                "labeled": bool(meta.get("caption")),
+                "prompt_override": meta.get("prompt_override"),
+            }
+        )
+    return samples
 
 
 def build_dataset_json(
@@ -37,7 +115,6 @@ def build_dataset_json(
     *,
     name: str = "local_dataset",
     custom_tag: str = "",
-    all_instrumental: bool = True,
 ) -> tuple[Path, str]:
     """Scan *dataset_dir* and write ACE-Step-compatible ``dataset.json``.
 
@@ -46,7 +123,6 @@ def build_dataset_json(
         output: Destination path for ``dataset.json``.
         name: Dataset name stored in metadata.
         custom_tag: Optional trigger tag applied to all samples.
-        all_instrumental: Default instrumental flag for samples without lyrics.
 
     Returns:
         ``(output_path, status_message)``.
@@ -54,19 +130,38 @@ def build_dataset_json(
     Raises:
         SystemExit: When no audio files are found.
     """
-    builder = DatasetBuilder()
-    builder.metadata.name = name
-    builder.metadata.custom_tag = custom_tag
-    builder.metadata.all_instrumental = all_instrumental
+    base = Path(dataset_dir).resolve()
+    if not base.is_dir():
+        raise SystemExit(f"Dataset directory not found: {base}")
 
-    samples, status = builder.scan_directory(str(dataset_dir))
+    samples = _scan_samples(base, custom_tag=custom_tag)
     if not samples:
-        raise SystemExit(status)
+        raise SystemExit(f"No audio files found in {base} (supported: {', '.join(sorted(AUDIO_EXTS))})")
 
+    with_meta = sum(1 for s in samples if s.get("labeled"))
+    all_instrumental = all(s.get("is_instrumental", False) for s in samples)
     out_path = Path(output)
-    _relativize_audio_paths(builder.samples, out_path)
-    save_status = builder.save_dataset(str(out_path), name)
-    return out_path, f"{status}\n{save_status}"
+    dataset = {
+        "metadata": {
+            "name": name,
+            "custom_tag": custom_tag,
+            "tag_position": "prepend",
+            "created_at": datetime.now().isoformat(),
+            "num_samples": len(samples),
+            "all_instrumental": all_instrumental,
+            "genre_ratio": 0,
+        },
+        "samples": samples,
+    }
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(dataset, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    status = (
+        f"Found {len(samples)} audio file(s) in {base}\n"
+        f"   JSON sidecars with caption: {with_meta}\n"
+        f"Dataset saved to {out_path}"
+    )
+    return out_path, status
 
 
 def main(argv: list[str] | None = None) -> int:
