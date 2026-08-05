@@ -122,25 +122,63 @@ def _download(url: str, dest: Path) -> None:
         dest.write_bytes(resp.read())
 
 
-def _search_preview(query: str, key: str) -> tuple[str, str] | None:
-    """Return (preview_hq_mp3_url, sound_id) or None."""
+def _search_previews(query: str, key: str, *, page: int = 1) -> list[tuple[str, str]]:
+    """Return list of (preview_hq_mp3_url, sound_id)."""
     params = urllib.parse.urlencode(
         {
             "query": query,
-            "page_size": 5,
+            "page": page,
+            "page_size": 15,
             "fields": "id,name,previews,license,duration",
-            "filter": "duration:[5 TO 120]",
+            # Allow short one-shots (kicks) and longer phrases
+            "filter": "duration:[1 TO 180]",
         }
     )
     url = f"https://freesound.org/apiv2/search/text/?{params}"
     data = _get_json(url, key)
-    results = data.get("results") or []
-    for item in results:
+    hits: list[tuple[str, str]] = []
+    for item in data.get("results") or []:
         previews = item.get("previews") or {}
         hq = previews.get("preview-hq-mp3") or previews.get("preview-lq-mp3")
         if hq:
-            return str(hq), str(item.get("id"))
-    return None
+            hits.append((str(hq), str(item.get("id"))))
+    return hits
+
+
+def _queries_for(stem_id: str) -> list[str]:
+    """Primary + fallback search strings for a slot id."""
+    primary = _query_for(stem_id)
+    prefix = _prefix_for(stem_id) or ""
+    fallbacks: dict[str, list[str]] = {
+        "oud_": ["oud", "middle eastern lute", "arabic lute"],
+        "qanun_": ["qanun", "kanun", "arabic zither"],
+        "violin_": ["violin solo", "fiddle folk", "middle eastern violin"],
+        "ney_": ["ney", "nay flute", "arabic flute"],
+        "santur_": ["santur", "santoor", "hammered dulcimer"],
+        "darbuka_": ["darbuka", "doumbek", "goblet drum"],
+        "riq_": ["riq", "frame drum", "tambourine middle eastern"],
+        "tabla_": ["tabla", "indian percussion"],
+        "kick_": ["kick drum", "house kick", "bass drum one shot"],
+        "sub_bass_": ["sub bass", "bass sine", "808 sine"],
+        "hats_": ["hihat", "closed hat loop", "house hats"],
+        "pad_": ["synth pad", "ambient pad", "warm pad"],
+        "pluck_": ["pluck synth", "plucked synth"],
+        "epiano_": ["electric piano", "rhodes", "epiano"],
+        "guitar_": ["acoustic guitar", "fingerstyle guitar"],
+        "buzuq_": ["buzuq", "bouzouki", "saz"],
+    }
+    out: list[str] = []
+    if primary:
+        out.append(primary)
+    out.extend(fallbacks.get(prefix, []))
+    # de-dupe preserve order
+    seen: set[str] = set()
+    uniq: list[str] = []
+    for q in out:
+        if q not in seen:
+            seen.add(q)
+            uniq.append(q)
+    return uniq
 
 
 def _prefix_for(stem_id: str) -> str | None:
@@ -177,7 +215,7 @@ def main() -> int:
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--limit", type=int, default=0, help="Max downloads (0=all empty)")
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--sleep", type=float, default=1.0, help="Seconds between API calls")
+    parser.add_argument("--sleep", type=float, default=0.8, help="Seconds between API calls")
     args = parser.parse_args()
     out = args.out
     if not out.is_dir():
@@ -193,7 +231,7 @@ def main() -> int:
 
     if args.dry_run:
         for stem in empty[:15]:
-            print(f"  would fetch: {stem}  query={_query_for(stem)!r}")
+            print(f"  would fetch: {stem}  queries={_queries_for(stem)!r}")
         if len(empty) > 15:
             print(f"  ... and {len(empty) - 15} more")
         return 0
@@ -201,25 +239,45 @@ def main() -> int:
     key = _api_key()
     ok = 0
     fail = 0
-    # cache query → preview so similar slots reuse one search less often
-    cache: dict[str, tuple[str, str] | None] = {}
+    # cache query -> list of previews; rotate per slot for variety
+    cache: dict[str, list[tuple[str, str]]] = {}
+    used_ids: set[str] = set()
+    slot_index_by_prefix: dict[str, int] = {}
 
     for stem in empty:
-        query = _query_for(stem)
-        if not query:
+        queries = _queries_for(stem)
+        if not queries:
             print(f"SKIP {stem}: no search mapping")
             fail += 1
             continue
+        prefix = _prefix_for(stem) or stem
+        pick_i = slot_index_by_prefix.get(prefix, 0)
+        slot_index_by_prefix[prefix] = pick_i + 1
+        chosen: tuple[str, str] | None = None
         try:
-            if query not in cache:
-                cache[query] = _search_preview(query, key)
-                time.sleep(args.sleep)
-            hit = cache[query]
-            if not hit:
-                print(f"MISS {stem}: no Freesound hit for {query!r}")
+            for q in queries:
+                if q not in cache:
+                    cache[q] = _search_previews(q, key, page=1)
+                    time.sleep(args.sleep)
+                    if len(cache[q]) < 3:
+                        # second page for more options
+                        cache[q].extend(_search_previews(q, key, page=2))
+                        time.sleep(args.sleep)
+                hits = cache[q]
+                # prefer unused sound ids; wrap around
+                for offset in range(len(hits)):
+                    url, sid = hits[(pick_i + offset) % len(hits)]
+                    if sid not in used_ids or offset == len(hits) - 1:
+                        chosen = (url, sid)
+                        used_ids.add(sid)
+                        break
+                if chosen:
+                    break
+            if not chosen:
+                print(f"MISS {stem}: no Freesound hit for {queries!r}")
                 fail += 1
                 continue
-            url, sid = hit
+            url, sid = chosen
             dest = out / f"{stem}.mp3"
             print(f"GET  {stem} ← freesound/{sid}")
             _download(url, dest)
