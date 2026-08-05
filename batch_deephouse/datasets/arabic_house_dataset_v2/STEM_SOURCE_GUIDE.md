@@ -10,6 +10,26 @@ The old files in `arabic_house_dataset/` (oud + ney samples) are optional legacy
 
 ---
 
+## Automate free stems (recommended on Windows)
+
+You **cannot** command-line download Splice/Loopmasters (paid + login).
+
+You **can** auto-fill slots from **Freesound** (Creative Commons previews):
+
+1. Account + API key: https://freesound.org/apiv2/apply  
+2. Git Bash:
+```bash
+cd /c/Users/Inferno/Downloads/ACE-Step-1.5
+export FREESOUND_API_KEY=paste_your_key_here
+PYTHONPATH=. python -m batch_deephouse.datasets.fetch_freesound_stems --dry-run
+PYTHONPATH=. python -m batch_deephouse.datasets.fetch_freesound_stems
+find batch_deephouse/datasets/arabic_house_dataset_v2 -iname '*.mp3' | wc -l
+```
+
+Quality is “good enough to start,” not studio Kontakt. Replace weak clips later with better packs.
+
+---
+
 ## Good sources (pick any mix)
 
 1. **Record real instruments** (best)  
